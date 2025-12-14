@@ -17,7 +17,7 @@ export const updateBill = async (id, updatedFields) => {
   try {
     const updatedBill = await billsSchema.findByIdAndUpdate(
       id,
-      { $set: updatedFields }, // só altera o que estiver no objeto
+      { $set: updatedFields },
       {
         new: true,
         runValidators: true,
@@ -27,6 +27,32 @@ export const updateBill = async (id, updatedFields) => {
     return updatedBill;
   } catch (error) {
     console.error("Erro ao atualizar Bill:", error);
+    throw error;
+  }
+};
+
+export const updatePaid = async (id, paid) => {
+  try {
+    console.log(paid);
+
+    if (typeof paid !== "boolean") {
+      throw new Error("O campo 'Paid' precisa ser boolean");
+    }
+
+    const updatedProduct = await billsSchema.findByIdAndUpdate(
+      id,
+      {
+        $set: { paid: paid },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    return updatedProduct;
+  } catch (error) {
+    console.error("Erro ao atualizar Paid:", error);
     throw error;
   }
 };

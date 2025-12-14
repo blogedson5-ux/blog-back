@@ -2,6 +2,7 @@ import express from "express";
 
 import { createBills } from "../server/bills";
 import { updateBill } from "../server/bills";
+import { updatePaid } from "../server/bills";
 import { deleteBills } from "../server/bills";
 import { getBills } from "../server/bills";
 
@@ -21,6 +22,17 @@ router.post("/create-bills", async (req, res) => {
 router.put("/update-bills/:id", async (req, res) => {
   try {
     const updated = await updateBill(req.params.id, req.body);
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao atualizar" });
+  }
+});
+
+router.post("/update-status/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paid } = req.body;
+    const updated = await updatePaid(id, paid);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: "Erro ao atualizar" });

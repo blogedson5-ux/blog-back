@@ -5,6 +5,7 @@ const billsSchema = new mongoose.Schema({
   price: { type: String },
   date: { type: String },
   cod: { type: String },
+  paid: { type: Boolean },
 });
 
 export default mongoose.model.Bills || mongoose.model("Bills", billsSchema);
