@@ -3,52 +3,73 @@ import cloudinary from "../utils/cloudinary";
 import Product from "../models/product";
 
 // ================= CREATE PRODUCT =================
+import { databaseConnection } from "../utils/database";
+import cloudinary from "../utils/cloudinary";
+import Product from "../models/product";
+
 export const createProduct = async (data, image) => {
   console.log("➡️ Iniciando createProduct");
 
+  // 1️⃣ Conecta ao MongoDB
   await databaseConnection();
   console.log("✅ MongoDB conectado");
 
   if (!image) {
-    throw new Error("Imagem é obrigatória para criar produto");
+    throw new Error("Imagem não enviada");
   }
 
+  let uploadResult;
   try {
-    // 🔹 Upload da imagem usando buffer (compatível serverless)
-    const result = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        { folder: "products", timeout: 180000 }, // 3 minutos
-        (error, result) => {
-          if (error) {
-            console.error("❌ Erro Cloudinary:", error);
-            return reject(new Error("Falha ao enviar imagem para Cloudinary"));
-          }
-          resolve(result);
-        },
-      );
-      uploadStream.end(image.buffer);
+    console.log("➡️ Enviando imagem ao Cloudinary");
+
+    // 2️⃣ Função para upload com Promise
+    uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          { folder: "products" }, // aqui você pode adicionar timeout se quiser
+          (err, result) => {
+            if (err) {
+              console.error("❌ Erro Cloudinary:", err);
+              return reject(err);
+            }
+            resolve(result);
+          },
+        )
+        .end(image.buffer); // garante que o buffer é enviado
     });
 
-    console.log("✅ Upload Cloudinary concluído");
+    if (!uploadResult || !uploadResult.secure_url) {
+      throw new Error("Upload Cloudinary não retornou dados válidos");
+    }
 
-    // 🔹 Salvar produto no MongoDB
-    const product = await Product.create({
+    console.log("✅ Upload Cloudinary concluído:", uploadResult.secure_url);
+  } catch (err) {
+    console.error("🔥 Falha ao enviar imagem:", err);
+    throw new Error("Não foi possível enviar a imagem");
+  }
+
+  // 3️⃣ Só agora salvar no MongoDB
+  try {
+    const productData = {
       name: data.name,
       category: data.category,
-      priceUnit: Number(data.priceUnit),
-      priceWholesale: Number(data.priceWholesale),
+      priceUnit: Number(data.priceUnit) || 0,
+      priceWholesale: Number(data.priceWholesale) || 0,
       image: {
-        url: result.secure_url,
+        url: uploadResult.secure_url,
         filename: image.originalname,
-        public_id: result.public_id,
+        public_id: uploadResult.public_id,
       },
-    });
+    };
 
-    console.log("✅ Produto salvo no MongoDB");
+    console.log("➡️ Dados completos para salvar no MongoDB:", productData);
+
+    const product = await Product.create(productData);
+    console.log("✅ Produto salvo no MongoDB:", product._id);
     return product;
-  } catch (error) {
-    console.error("🔥 Erro ao criar produto:", error);
-    throw new Error(error.message || "Erro interno ao criar produto");
+  } catch (err) {
+    console.error("🔥 Erro ao salvar produto no MongoDB:", err);
+    throw new Error("Erro interno ao criar produto");
   }
 };
 
