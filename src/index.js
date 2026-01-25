@@ -11,21 +11,26 @@ import routerProduct from "../src/controllers/product";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+// Configuração de CORS
+const corsOptions = {
+  origin: ["http://localhost:3000", "https://simoesbone.netlify.app"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true,
+};
 
-app.use(
-  cors({
-    origin: ["http://localhost:3000", "https://simoesbone.netlify.app"],
-    methods: "GET,POST,PUT,DELETE",
-    credentials: true,
-  }),
-);
+// Responde a preflight requests
+app.options("*", cors(corsOptions));
+
+// Usar CORS
+app.use(cors(corsOptions));
 
 app.use(bodyParser.json());
 app.use("/auth", routerUser);
 app.use("/product", routerProduct);
+
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
 
 const server = app.listen(PORT, () => {
   console.log(`App rodando em http://localhost:${PORT}`);
