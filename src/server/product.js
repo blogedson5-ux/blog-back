@@ -1,189 +1,141 @@
 import { databaseConnection } from "../utils/database";
 import cloudinary from "../utils/cloudinary";
-
 import Product from "../models/product";
 
+// ================= CREATE PRODUCT =================
 export const createProduct = async (data, image) => {
   console.log("➡️ Iniciando createProduct");
 
-  // 1️⃣ Garantir conexão com MongoDB
   await databaseConnection();
   console.log("✅ MongoDB conectado");
 
-  // 2️⃣ Função de upload com tentativas
-  const uploadToCloudinary = async (imageFile, attempt = 1) => {
-    return new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          { folder: "products", timeout: 180000 }, // 3 minutos
-          (error, result) => {
-            if (error) {
-              console.error(
-                `❌ Cloudinary erro (tentativa ${attempt}):`,
-                error,
-              );
-              return reject(error);
-            }
-            console.log(
-              `✅ Upload Cloudinary concluído (tentativa ${attempt})`,
-            );
-            resolve(result);
-          },
-        )
-        .end(imageFile.buffer);
-    });
-  };
-
-  // 3️⃣ Tentar o upload até 3 vezes
-  let uploadResult;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      uploadResult = await uploadToCloudinary(image, attempt);
-      if (uploadResult) break;
-    } catch (err) {
-      if (attempt === 3) throw new Error("❌ Falha no upload para Cloudinary");
-      console.log(`⏳ Tentativa ${attempt} falhou, tentando novamente...`);
-      await new Promise((res) => setTimeout(res, 2000 * attempt));
-    }
+  if (!image) {
+    throw new Error("Imagem é obrigatória para criar produto");
   }
 
-  // 4️⃣ Salvar produto no MongoDB
   try {
+    // 🔹 Upload da imagem usando buffer (compatível serverless)
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: "products", timeout: 180000 }, // 3 minutos
+        (error, result) => {
+          if (error) {
+            console.error("❌ Erro Cloudinary:", error);
+            return reject(new Error("Falha ao enviar imagem para Cloudinary"));
+          }
+          resolve(result);
+        },
+      );
+      uploadStream.end(image.buffer);
+    });
+
+    console.log("✅ Upload Cloudinary concluído");
+
+    // 🔹 Salvar produto no MongoDB
     const product = await Product.create({
       name: data.name,
       category: data.category,
-      priceUnit: data.priceUnit,
-      priceWholesale: data.priceWholesale,
+      priceUnit: Number(data.priceUnit),
+      priceWholesale: Number(data.priceWholesale),
       image: {
-        url: uploadResult.secure_url,
+        url: result.secure_url,
         filename: image.originalname,
-        public_id: uploadResult.public_id,
+        public_id: result.public_id,
       },
     });
 
     console.log("✅ Produto salvo no MongoDB");
     return product;
   } catch (error) {
-    console.error("🔥 Erro ao salvar produto:", error);
-    throw new Error(`Erro interno ao criar produto: ${error.message}`);
+    console.error("🔥 Erro ao criar produto:", error);
+    throw new Error(error.message || "Erro interno ao criar produto");
   }
 };
 
+// ================= UPDATE PRODUCT =================
 export const updateProduct = async (id, data, image) => {
-  console.log("➡️ Iniciando updateProduct");
-
-  // 1️⃣ Conecta ao MongoDB
   await databaseConnection();
-  console.log("✅ MongoDB conectado");
 
-  // 2️⃣ Busca o produto
   const product = await Product.findById(id);
-  if (!product) {
-    throw new Error("Produto não encontrado");
-  }
+  if (!product) throw new Error("Produto não encontrado");
 
-  // 3️⃣ Função de upload com retry
-  const uploadToCloudinary = async (imageFile, attempt = 1) => {
-    return new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          { folder: "products", timeout: 180000 }, // 3 minutos
-          (err, result) => {
-            if (err) {
-              console.error(`❌ Cloudinary erro (tentativa ${attempt}):`, err);
-              return reject(err);
-            }
-            console.log(
-              `✅ Upload Cloudinary concluído (tentativa ${attempt})`,
-            );
-            resolve(result);
-          },
-        )
-        .end(imageFile.buffer);
-    });
-  };
-
-  // 4️⃣ Atualiza imagem se houver nova
-  if (image) {
-    // Remove imagem antiga
-    if (product.image && product.image.public_id) {
-      try {
+  try {
+    // 🔁 Atualiza imagem se houver nova
+    if (image) {
+      // Remove imagem antiga
+      if (product.image && product.image.public_id) {
         await cloudinary.uploader.destroy(product.image.public_id);
         console.log("🗑️ Imagem antiga removida do Cloudinary");
-      } catch (err) {
-        console.warn("⚠️ Erro ao remover imagem antiga:", err);
       }
+
+      // Upload da nova imagem
+      const uploadResult = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: "products", timeout: 180000 },
+          (err, result) => {
+            if (err) {
+              console.error("❌ Erro Cloudinary:", err);
+              return reject(
+                new Error("Falha ao enviar imagem para Cloudinary"),
+              );
+            }
+            resolve(result);
+          },
+        );
+        uploadStream.end(image.buffer);
+      });
+
+      product.image = {
+        url: uploadResult.secure_url,
+        filename: image.originalname,
+        public_id: uploadResult.public_id,
+      };
     }
 
-    // Upload nova imagem com retry
-    let uploadResult;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        uploadResult = await uploadToCloudinary(image, attempt);
-        if (uploadResult) break;
-      } catch (err) {
-        if (attempt === 3) throw new Error("❌ Falha no upload da nova imagem");
-        console.log(`⏳ Tentativa ${attempt} falhou, tentando novamente...`);
-        await new Promise((res) => setTimeout(res, 2000 * attempt));
-      }
-    }
+    // ✏️ Atualiza dados
+    product.name = data.name;
+    product.category = data.category;
+    product.priceUnit = Number(data.priceUnit);
+    product.priceWholesale = Number(data.priceWholesale);
 
-    product.image = {
-      url: uploadResult.secure_url,
-      filename: image.originalname,
-      public_id: uploadResult.public_id,
-    };
-  }
-
-  // 5️⃣ Atualiza dados do produto
-  product.name = data.name;
-  product.category = data.category;
-  product.priceUnit = Number(data.priceUnit);
-  product.priceWholesale = Number(data.priceWholesale);
-
-  // 6️⃣ Salva no MongoDB
-  try {
-    const updatedProduct = await product.save();
-    console.log("✅ Produto atualizado no MongoDB");
-    return updatedProduct;
-  } catch (err) {
-    console.error("🔥 Erro ao salvar produto atualizado:", err);
-    throw new Error(`Erro interno ao atualizar produto: ${err.message}`);
+    await product.save();
+    console.log("✅ Produto atualizado com sucesso");
+    return product;
+  } catch (error) {
+    console.error("🔥 Erro ao atualizar produto:", error);
+    throw new Error(error.message || "Erro interno ao atualizar produto");
   }
 };
 
+// ================= DELETE PRODUCT =================
 export const deleteProduct = async (id) => {
   await databaseConnection();
 
   const product = await Product.findById(id);
+  if (!product) throw new Error("Produto não encontrado");
 
-  if (!product) {
-    throw new Error("Produto não encontrado");
-  }
-
-  // 🗑️ Remove imagem do Cloudinary
+  // Remove imagem do Cloudinary
   if (product.image && product.image.public_id) {
     await cloudinary.uploader.destroy(product.image.public_id);
   }
 
-  // 🗑️ Remove produto do Mongo
+  // Remove produto do Mongo
   await Product.findByIdAndDelete(id);
 
+  console.log("✅ Produto deletado com sucesso");
   return product;
 };
 
+// ================= GET ALL PRODUCTS =================
 export const getAllProducts = async () => {
   await databaseConnection();
 
   try {
-    const findProduct = await Product.find();
-
-    if (!findProduct) {
-      throw new Error("Produtos não encontrado...");
-    }
-
-    return findProduct;
+    const products = await Product.find();
+    if (!products || products.length === 0) return [];
+    return products;
   } catch (error) {
-    console.log("Error de servidor...");
+    console.error("🔥 Erro ao buscar produtos:", error);
+    throw new Error("Erro interno ao buscar produtos");
   }
 };
