@@ -46,7 +46,7 @@ export const login = async (body) => {
   return { token };
 };
 
-const senha = "armarinho253658";
+const senha = "Leo202020";
 
 export const gerarSenha = async () => {
   bcrypt.genSalt(10, (err, salt) => {

@@ -7,8 +7,6 @@ dotenv.config();
 
 import routerUser from "../src/controllers/user";
 import routerProduct from "../src/controllers/product";
-import routerGastos from "../src/controllers/gastos";
-import routerBills from "../src/controllers/bills";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -19,17 +17,15 @@ app.get("/", (req, res) => {
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://listaarmarinho.netlify.app"],
+    origin: ["http://localhost:3000"],
     methods: "GET,POST,PUT,DELETE",
     credentials: true,
-  })
+  }),
 );
 
 app.use(bodyParser.json());
 app.use("/auth", routerUser);
 app.use("/product", routerProduct);
-app.use("/gastos", routerGastos);
-app.use("/bills", routerBills);
 
 const server = app.listen(PORT, () => {
   console.log(`App rodando em http://localhost:${PORT}`);

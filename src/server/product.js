@@ -1,67 +1,122 @@
 import { databaseConnection } from "../utils/database";
-import productSchema from "../models/product";
+import cloudinary from "../utils/cloudinary";
 
-export const createProduct = async (body) => {
+import Product from "../models/product";
+
+export const createProduct = async (data, image) => {
+  console.log("➡️ Iniciando createProduct");
+
   await databaseConnection();
-  try {
-    const product = await productSchema.create(body);
-    return product;
-  } catch (error) {
-    console.error("Erro ao criar produto:", error);
-    throw new Error(error.message || "Erro no servidor ao criar produto.");
-  }
-};
-
-export const updateProduct = async (productId, updatedData) => {
-  await databaseConnection();
-  try {
-    const product = await productSchema.findByIdAndUpdate(
-      productId,
-      { $set: updatedData },
-      { new: true, runValidators: true }
-    );
-
-    if (!product) {
-      return { success: false, message: "Produto não encontrado" };
-    }
-
-    return { success: true, data: product };
-  } catch (error) {
-    console.error("Erro ao atualizar produto:", error);
-    return { success: false, message: "Erro ao atualizar produto" };
-  }
-};
-
-export const deleteProduct = async (productId) => {
-  await databaseConnection();
+  console.log("✅ MongoDB conectado");
 
   try {
-    const product = await productSchema.findById(productId);
+    console.log("➡️ Enviando imagem ao Cloudinary");
 
-    if (!product) {
-      return { success: false, message: "Produto não encontrado" };
-    }
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream({ folder: "products" }, (error, result) => {
+          if (error) {
+            console.error("❌ Erro Cloudinary:", error);
+            return reject(error);
+          }
+          resolve(result);
+        })
+        .end(image.buffer);
+    });
 
-    await productSchema.findByIdAndDelete(productId);
+    console.log("✅ Upload Cloudinary concluído");
 
-    return { success: true, message: "Produto deletado com sucesso" };
-  } catch (error) {
-    console.error("Erro ao deletar produto:", error);
-    return { success: false, message: "Erro interno ao deletar produto" };
-  }
-};
+    const product = await Product.create({
+      name: data.name,
+      category: data.category,
+      priceUnit: data.priceUnit,
+      priceWholesale: data.priceWholesale,
+      image: {
+        url: result.secure_url,
+        filename: image.originalname,
+        public_id: result.public_id,
+      },
+    });
 
-export const getProduct = async () => {
-  await databaseConnection();
-  try {
-    const product = await productSchema.find();
-
-    if (!product) {
-      throw new Error("Nao foi encontrado nenhum produtos");
-    }
+    console.log("✅ Produto salvo no MongoDB");
 
     return product;
   } catch (error) {
-    throw new Error("Error interno no servidor", error);
+    console.error("🔥 ERRO FINAL:", error);
+    throw new Error(`Erro interno ao criar produto: ${error.message}`);
+  }
+};
+
+export const updateProduct = async (id, data, image) => {
+  await databaseConnection();
+
+  const product = await Product.findById(id);
+  if (!product) {
+    throw new Error("Produto não encontrado");
+  }
+
+  // 🔁 Atualiza imagem se houver nova
+  if (image) {
+    await cloudinary.uploader.destroy(product.image.public_id);
+
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream({ folder: "products" }, (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        })
+        .end(image.buffer);
+    });
+
+    product.image = {
+      url: uploadResult.secure_url,
+      filename: image.originalname,
+      public_id: uploadResult.public_id,
+    };
+  }
+
+  // ✏️ Atualiza dados
+  product.name = data.name;
+  product.category = data.category;
+  product.priceUnit = Number(data.priceUnit);
+  product.priceWholesale = Number(data.priceWholesale);
+
+  await product.save();
+  return product;
+};
+
+export const deleteProduct = async (id) => {
+  await databaseConnection();
+
+  const product = await Product.findById(id);
+
+  if (!product) {
+    throw new Error("Produto não encontrado");
+  }
+
+  // 🗑️ Remove imagem do Cloudinary
+  if (product.image && product.image.public_id) {
+    await cloudinary.uploader.destroy(product.image.public_id);
+  }
+
+  // 🗑️ Remove produto do Mongo
+  await Product.findByIdAndDelete(id);
+
+  return product;
+};
+
+export const getAllProducts = async () => {
+  await databaseConnection();
+
+  try {
+    const findProduct = await Product.find();
+
+    if (!findProduct) {
+      throw new Error("Produtos não encontrado...");
+    }
+
+    return findProduct;
+  } catch (error) {
+    console.log("Error de servidor...");
   }
 };
