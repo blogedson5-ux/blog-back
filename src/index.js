@@ -1,65 +1,40 @@
 import express from "express";
-import multer from "multer";
-import Product from "../models/product";
-import { databaseConnection } from "../utils/database";
-import cloudinary from "../utils/cloudinary";
+import cors from "cors";
+import bodyParser from "body-parser";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+import routerUser from "../src/controllers/user";
+import routerProduct from "../src/controllers/product";
 
 const app = express();
-const upload = multer(); // para lidar com multipart/form-data
+const PORT = process.env.PORT || 5000;
 
-// Middleware CORS manual para serverless
-app.use((req, res, next) => {
-  res.setHeader(
-    "Access-Control-Allow-Origin",
-    "https://simoesbone.netlify.app",
-  ); // seu front
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end(); // Responde preflight
-  }
-
-  next();
+app.get("/", (req, res) => {
+  res.send("Hello World!");
 });
 
-// Rota de criar produto
-app.post(
-  "/product/create-product",
-  upload.single("image"),
-  async (req, res) => {
-    try {
-      await databaseConnection();
-
-      const { name, category, priceUnit, priceWholesale } = req.body;
-      const image = req.file;
-
-      // Upload Cloudinary
-      const result = await cloudinary.uploader.upload(image.path, {
-        folder: "products",
-        timeout: 180000,
-      });
-
-      // Salva no MongoDB
-      const product = await Product.create({
-        name,
-        category,
-        priceUnit,
-        priceWholesale,
-        image: {
-          url: result.secure_url,
-          filename: image.originalname,
-          public_id: result.public_id,
-        },
-      });
-
-      res.status(201).json(product);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Erro interno ao criar produto" });
-    }
-  },
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "https://simoesbone.netlify.app"],
+    methods: "GET,POST,PUT,DELETE",
+    credentials: true,
+  }),
 );
 
-export default app;
+app.use(bodyParser.json());
+app.use("/auth", routerUser);
+app.use("/product", routerProduct);
+
+const server = app.listen(PORT, () => {
+  console.log(`App rodando em http://localhost:${PORT}`);
+});
+
+// Tratar erro de porta ocupada
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`Erro: Porta ${PORT} já está em uso.`);
+    process.exit(1);
+  }
+});
