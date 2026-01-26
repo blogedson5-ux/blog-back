@@ -9,6 +9,7 @@ import routerProduct from "../src/controllers/product";
 
 const app = express();
 
+// 🔐 CORS (antes de tudo)
 app.use(
   cors({
     origin: ["http://localhost:3000", "https://simoesbone.netlify.app"],
@@ -17,13 +18,16 @@ app.use(
   }),
 );
 
-// ✅ trata preflight
+// 🔁 Preflight
 app.options("*", cors());
 
-// ✅ JSON só onde precisa
-app.use("/auth", express.json());
+// 🔐 JSON APENAS para auth
+app.use("/auth", express.json(), routerUser);
 
-// ❌ upload não passa por json parser
+// 📦 Upload / produtos SEM json parser
 app.use("/product", routerProduct);
+
+// rota teste
+app.get("/", (_, res) => res.send("API OK"));
 
 export default app;
