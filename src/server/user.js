@@ -59,3 +59,7 @@ export const gerarSenha = async () => {
     });
   });
 };
+
+
+
+/* Teste de poder */
