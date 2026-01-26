@@ -3,6 +3,7 @@ import multer from "multer";
 
 import { createProduct } from "../server/product";
 import { updateProduct } from "../server/product";
+import { deleteProduct } from "../server/product";
 import { getAllProducts } from "../server/product";
 import product from "../models/product";
 
@@ -37,6 +38,23 @@ router.post("/create-product", upload.single("image"), async (req, res) => {
   }
 });
 
+router.delete("/delete-product/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const deletedProduct = await deleteProduct(id);
+
+    return res.status(200).json({
+      message: "Produto deletado com sucesso",
+      product: deletedProduct,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      error: error.message,
+    });
+  }
+});
+
 router.put("/update-product/:id", upload.single("image"), async (req, res) => {
   try {
     const { id } = req.params;
@@ -51,8 +69,8 @@ router.put("/update-product/:id", upload.single("image"), async (req, res) => {
 });
 
 router.get("/get-product/:id", async (req, res) => {
-  const product = await product.findById(req.params.id);
-  res.status(200).json(product);
+  const productId = await product.findById(req.params.id);
+  res.status(200).json(productId);
 });
 
 router.get("/get-all-product", async (req, res) => {

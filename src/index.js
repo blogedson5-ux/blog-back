@@ -30,4 +30,10 @@ app.use("/product", routerProduct);
 // rota teste
 app.get("/", (_, res) => res.send("API OK"));
 
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 API rodando em http://localhost:${PORT}`);
+});
+
 export default app;
