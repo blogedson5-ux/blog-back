@@ -6,6 +6,7 @@ dotenv.config();
 
 import routerUser from "../src/controllers/user";
 import routerProduct from "../src/controllers/product";
+import routerBanner from "./controllers/banner.js";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/auth", express.json(), routerUser);
 
 // 📦 Upload / produtos SEM json parser
 app.use("/product", routerProduct);
+app.use("/banner", routerBanner);
 
 // rota teste
 app.get("/", (_, res) => res.send("API OK"));
