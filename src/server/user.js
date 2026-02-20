@@ -8,7 +8,7 @@ export function createToken(user) {
   return jwt.sign(
     { _id: user._id, name: user.name, email: user.email },
     SECRET,
-    { expiresIn: "30d" }
+    { expiresIn: "30d" },
   );
 }
 
@@ -30,8 +30,6 @@ export function verifica(token) {
 export const login = async (body) => {
   const mockUser = getMockUser();
 
-  console.log(body);
-
   if (body.email !== mockUser.email) {
     throw new Error("Usuário inválido");
   }
@@ -46,7 +44,7 @@ export const login = async (body) => {
   return { token };
 };
 
-const senha = "Leo202020";
+const senha = "Edson2020";
 
 export const gerarSenha = async () => {
   bcrypt.genSalt(10, (err, salt) => {
@@ -59,7 +57,3 @@ export const gerarSenha = async () => {
     });
   });
 };
-
-
-
-/* Teste de poder */

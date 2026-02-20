@@ -5,15 +5,14 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import routerUser from "../src/controllers/user";
-import routerProduct from "../src/controllers/product";
-import routerBanner from "./controllers/banner.js";
+import routerProduct from "../src/controllers/post.js";
 
 const app = express();
 
 // 🔐 CORS (antes de tudo)
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://simoesbone.netlify.app"],
+    origin: ["http://localhost:3000", ""],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   }),
@@ -25,11 +24,8 @@ app.options("*", cors());
 // 🔐 JSON APENAS para auth
 app.use("/auth", express.json(), routerUser);
 
-// 📦 Upload / produtos SEM json parser
-app.use("/product", routerProduct);
-app.use("/banner", routerBanner);
+app.use("/post", routerProduct);
 
-// rota teste
 app.get("/", (_, res) => res.send("API OK"));
 
 const PORT = process.env.PORT || 5000;
