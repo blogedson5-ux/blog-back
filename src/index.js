@@ -12,7 +12,7 @@ const app = express();
 // 🔐 CORS (antes de tudo)
 app.use(
   cors({
-    origin: ["http://localhost:3000", ""],
+    origin: ["http://localhost:3000", "https://blogedson.netlify.app"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   }),
