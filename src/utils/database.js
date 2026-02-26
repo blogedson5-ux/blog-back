@@ -1,9 +1,12 @@
 import mongoose from "mongoose";
 import dns from "dns";
 
-if (process.env.FORCE_GOOGLE_DNS === "true") {
+/* if (process.env.FORCE_GOOGLE_DNS === "true") {
   dns.setServers(["8.8.8.8", "8.8.4.4"]);
 }
+ */
+
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 if (!process.env.URI) {
   throw new Error("🚨 MONGO_URI não definida nas variáveis de ambiente!");
@@ -25,9 +28,7 @@ export const databaseConnection = async () => {
     try {
       console.log("🔎 Testando DNS SRV...");
 
-      await dns.promises.resolveSrv(
-        "_mongodb._tcp.post.rylpi5t.mongodb.net"
-      );
+      await dns.promises.resolveSrv("_mongodb._tcp.post.rylpi5t.mongodb.net");
 
       console.log("🔗 Tentando conectar ao MongoDB...");
 
@@ -36,7 +37,6 @@ export const databaseConnection = async () => {
         serverSelectionTimeoutMS: 30000,
         bufferCommands: false,
       });
-
     } catch (err) {
       console.error("❌ Erro antes da conexão:", err);
       throw err;
