@@ -1,11 +1,13 @@
+// index.js
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-import routerUser from "../src/controllers/user";
-import routerProduct from "../src/controllers/post.js";
+import routerUser from "./controllers/user.js";
+import routerProduct from "./controllers/post.js";
+import { databaseConnection } from "./utils/database.js";
 
 const app = express();
 
@@ -21,17 +23,29 @@ app.use(
 // 🔁 Preflight
 app.options("*", cors());
 
-// 🔐 JSON APENAS para auth
+// 🔐 JSON apenas para auth
 app.use("/auth", express.json(), routerUser);
 
+// Rotas principais
 app.use("/post", routerProduct);
 
+// Rota raiz
 app.get("/", (_, res) => res.send("API OK"));
 
-const PORT = process.env.PORT || 5000;
+// 🔹 Conectar ao MongoDB antes de iniciar o servidor
+const startServer = async () => {
+  try {
+    await databaseConnection(); // Conecta ao MongoDB
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`🚀 API rodando em http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error("❌ Não foi possível iniciar o servidor:", err);
+    process.exit(1); // encerra o processo se não conectar
+  }
+};
 
-app.listen(PORT, () => {
-  console.log(`🚀 API rodando em http://localhost:${PORT}`);
-});
+startServer();
 
 export default app;
