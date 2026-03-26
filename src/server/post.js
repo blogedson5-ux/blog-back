@@ -40,7 +40,7 @@ export const createPost = async (data, file) => {
     },
   });
 
-  if (postsToday >= 2) {
+  if (postsToday >= 20) {
     throw new Error(
       "Limite diário atingido. Apenas 2 posts por dia são permitidos.",
     );
@@ -59,7 +59,7 @@ export const createPost = async (data, file) => {
   const post = await Post.create({
     titulo: data.titulo,
     textOne: data.textOne,
-    textTwo: data.textTwo,
+    category: data.category,
     image: {
       url: uploadResult.secure_url,
       public_id: uploadResult.public_id,
@@ -84,7 +84,7 @@ export const updatePost = async (id, data, file) => {
   // Atualiza textos
   post.titulo = data.titulo;
   post.textOne = data.textOne;
-  post.textTwo = data.textTwo;
+  post.category = data.category;
 
   // Atualiza imagem somente se enviaram arquivo novo
   if (file && file.buffer && file.buffer.length > 0) {

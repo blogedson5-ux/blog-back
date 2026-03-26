@@ -16,7 +16,7 @@ const upload = multer({
 
 router.post("/create-post", upload.single("image"), async (req, res) => {
   try {
-    const { titulo, textOne, textTwo } = req.body;
+    const { titulo, textOne, category } = req.body;
     const file = req.file;
 
     console.log("🟢 req.file existe?", !!file);
@@ -24,9 +24,9 @@ router.post("/create-post", upload.single("image"), async (req, res) => {
 
     if (!file) {
       return res.status(400).json({ message: "Imagem não enviada" });
-    }
+    } 
 
-    if (!titulo || !textOne || !textTwo) {
+    if (!titulo || !textOne || !category) {
       return res.status(400).json({ message: "Campos obrigatórios" });
     }
 
@@ -34,7 +34,7 @@ router.post("/create-post", upload.single("image"), async (req, res) => {
       {
         titulo,
         textOne,
-        textTwo,
+        category,
       },
       file,
     );

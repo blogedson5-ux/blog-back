@@ -4,7 +4,7 @@ const PostSchema = new mongoose.Schema(
   {
     titulo: { type: String, required: true },
     textOne: { type: String, required: true },
-    textTwo: { type: String, required: true },
+    category: { type: String, required: true },
 
     image: {
       url: { type: String, required: true },

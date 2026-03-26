@@ -7,6 +7,7 @@ dotenv.config();
 
 import routerUser from "./controllers/user.js";
 import routerProduct from "./controllers/post.js";
+import routerAd from "./controllers/ad.js";
 import { databaseConnection } from "./utils/database.js";
 
 const app = express();
@@ -28,6 +29,8 @@ app.use("/auth", express.json(), routerUser);
 
 // Rotas principais
 app.use("/post", routerProduct);
+
+app.use("/ads", routerAd);
 
 // Rota raiz
 app.get("/", (_, res) => res.send("API OK"));
