@@ -10,13 +10,13 @@ import { getPostById } from "../server/post";
 const router = express.Router();
 
 const upload = multer({
-  storage: multer.memoryStorage(), // mantém o arquivo na memória
-  limits: { fileSize: 5 * 1024 * 1024 }, // limite de 5MB
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 router.post("/create-post", upload.single("image"), async (req, res) => {
   try {
-    const { titulo, textOne, category } = req.body;
+    const { titulo, textOne, category, videoUrl } = req.body;
     const file = req.file;
 
     console.log("🟢 req.file existe?", !!file);
@@ -24,7 +24,7 @@ router.post("/create-post", upload.single("image"), async (req, res) => {
 
     if (!file) {
       return res.status(400).json({ message: "Imagem não enviada" });
-    } 
+    }
 
     if (!titulo || !textOne || !category) {
       return res.status(400).json({ message: "Campos obrigatórios" });
@@ -35,6 +35,7 @@ router.post("/create-post", upload.single("image"), async (req, res) => {
         titulo,
         textOne,
         category,
+        videoUrl,
       },
       file,
     );
@@ -48,11 +49,11 @@ router.post("/create-post", upload.single("image"), async (req, res) => {
 
 router.put("/update-post/:id", upload.single("image"), async (req, res) => {
   try {
-    const { titulo, textOne, textTwo } = req.body;
+    const { titulo, textOne, category, videoUrl } = req.body;
     const file = req.file;
     const { id } = req.params;
 
-    if (!titulo || !textOne || !textTwo) {
+    if (!titulo || !textOne || !category) {
       return res.status(400).json({ message: "Campos obrigatórios" });
     }
 
@@ -61,9 +62,10 @@ router.put("/update-post/:id", upload.single("image"), async (req, res) => {
       {
         titulo,
         textOne,
-        textTwo,
+        category,
+        videoUrl,
       },
-      file, // pode ser undefined
+      file,
     );
 
     res.status(200).json(result);

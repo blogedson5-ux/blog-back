@@ -8,6 +8,8 @@ dotenv.config();
 import routerUser from "./controllers/user.js";
 import routerProduct from "./controllers/post.js";
 import routerAd from "./controllers/ad.js";
+import routerEmbed from "./controllers/embed.js";
+
 import { databaseConnection } from "./utils/database.js";
 
 const app = express();
@@ -31,6 +33,8 @@ app.use("/auth", express.json(), routerUser);
 app.use("/post", routerProduct);
 
 app.use("/ads", routerAd);
+
+app.use("/embed", routerEmbed);
 
 // Rota raiz
 app.get("/", (_, res) => res.send("API OK"));

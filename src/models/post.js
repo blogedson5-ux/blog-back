@@ -5,6 +5,7 @@ const PostSchema = new mongoose.Schema(
     titulo: { type: String, required: true },
     textOne: { type: String, required: true },
     category: { type: String, required: true },
+    videoUrl: { type: String, default: "" },
 
     image: {
       url: { type: String, required: true },

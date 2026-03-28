@@ -16,7 +16,7 @@ const upload = multer({
 
 router.post("/create-ad", upload.array("images", 3), async (req, res) => {
   try {
-    const { titulo, descricao, link } = req.body;
+    const { titulo, link } = req.body;
     const files = req.files;
 
     console.log("🟢 req.files existe?", !!files);
@@ -35,14 +35,13 @@ router.post("/create-ad", upload.array("images", 3), async (req, res) => {
       });
     }
 
-    if (!titulo || !descricao || !link) {
+    if (!titulo || !link) {
       return res.status(400).json({ message: "Campos obrigatórios" });
     }
 
     const result = await createAd(
       {
         titulo,
-        descricao,
         link,
       },
       files,
@@ -58,14 +57,13 @@ router.post("/create-ad", upload.array("images", 3), async (req, res) => {
 router.put("/update-ad/:id", upload.array("images", 3), async (req, res) => {
   try {
     const { id } = req.params;
-    const { titulo, descricao, link } = req.body;
+    const { titulo, link } = req.body;
     const files = req.files;
 
     const result = await updateAd(
       id,
       {
         titulo,
-        descricao,
         link,
       },
       files,

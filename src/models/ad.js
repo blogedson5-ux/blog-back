@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 const AdSchema = new mongoose.Schema(
   {
     titulo: { type: String, required: true },
-    descricao: { type: String, required: true },
     link: { type: String, required: true },
 
     images: [

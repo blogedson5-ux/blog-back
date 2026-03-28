@@ -9,7 +9,6 @@ export const createPost = async (data, file) => {
     throw new Error("Dados inválidos para criação do post");
   }
 
-  // 🕒 Define início e fim do dia atual
   const now = new Date();
 
   const startOfDay = new Date(
@@ -32,7 +31,6 @@ export const createPost = async (data, file) => {
     999,
   );
 
-  // 🔎 Conta quantos posts já existem hoje
   const postsToday = await Post.countDocuments({
     createdAt: {
       $gte: startOfDay,
@@ -42,11 +40,10 @@ export const createPost = async (data, file) => {
 
   if (postsToday >= 20) {
     throw new Error(
-      "Limite diário atingido. Apenas 2 posts por dia são permitidos.",
+      "Limite diário atingido. Apenas 20 posts por dia são permitidos.",
     );
   }
 
-  // 📤 Upload para Cloudinary
   const uploadResult = await new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream({ folder: "posts" }, (error, result) => {
@@ -60,6 +57,7 @@ export const createPost = async (data, file) => {
     titulo: data.titulo,
     textOne: data.textOne,
     category: data.category,
+    videoUrl: data.videoUrl || "",
     image: {
       url: uploadResult.secure_url,
       public_id: uploadResult.public_id,
@@ -81,30 +79,27 @@ export const updatePost = async (id, data, file) => {
     throw new Error("Post não encontrado");
   }
 
-  // Atualiza textos
   post.titulo = data.titulo;
   post.textOne = data.textOne;
   post.category = data.category;
+  post.videoUrl = data.videoUrl || "";
 
-  // Atualiza imagem somente se enviaram arquivo novo
   if (file && file.buffer && file.buffer.length > 0) {
-    // guarda imagem antiga de forma compatível
-    var oldPublicId = null;
+    let oldPublicId = null;
+
     if (post.image && post.image.public_id) {
       oldPublicId = post.image.public_id;
     }
 
-    // Upload da nova imagem
-    var uploadResult = await new Promise(function (resolve, reject) {
+    const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader
-        .upload_stream({ folder: "posts" }, function (error, result) {
+        .upload_stream({ folder: "posts" }, (error, result) => {
           if (error) return reject(error);
           resolve(result);
         })
         .end(file.buffer);
     });
 
-    // Salva a nova imagem no post
     post.image = {
       url: uploadResult.secure_url,
       public_id: uploadResult.public_id,
@@ -112,7 +107,6 @@ export const updatePost = async (id, data, file) => {
 
     await post.save();
 
-    // Remove a antiga imagem DEPOIS
     if (oldPublicId) {
       await cloudinary.uploader.destroy(oldPublicId);
     }
@@ -137,10 +131,7 @@ export const deletePost = async (postId) => {
     throw new Error("Post não encontrado");
   }
 
-  // 🗑 Remove imagem do Cloudinary
   await cloudinary.uploader.destroy(post.image.public_id);
-
-  // 🗑 Remove post do banco
   await Post.findByIdAndDelete(postId);
 
   return { message: "Post deletado com sucesso" };

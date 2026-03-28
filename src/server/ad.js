@@ -14,9 +14,9 @@ export const createAd = async (data, files) => {
     throw new Error("Só é permitido enviar no máximo 3 imagens por anúncio");
   }
 
-  const { titulo, descricao, link } = data;
+  const { titulo, link } = data;
 
-  if (!titulo || !descricao || !link) {
+  if (!titulo || !link) {
     throw new Error("Campos obrigatórios não preenchidos");
   }
 
@@ -43,7 +43,6 @@ export const createAd = async (data, files) => {
 
   const ad = await Ad.create({
     titulo,
-    descricao,
     link,
     images: uploadedImages,
   });
@@ -102,9 +101,9 @@ export const updateAd = async (id, data, files) => {
       throw new Error("ID inválido");
     }
 
-    const { titulo, descricao, link } = data || {};
+    const { titulo, link } = data || {};
 
-    if (!titulo || !descricao || !link) {
+    if (!titulo || !link) {
       throw new Error("Campos obrigatórios não preenchidos");
     }
 
@@ -152,7 +151,6 @@ export const updateAd = async (id, data, files) => {
     }
 
     findAd.titulo = titulo;
-    findAd.descricao = descricao;
     findAd.link = link;
     findAd.images = updatedImages;
 
