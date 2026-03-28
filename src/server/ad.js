@@ -103,8 +103,8 @@ export const updateAd = async (id, data, files) => {
 
     const { titulo, link } = data || {};
 
-    if (!titulo || !link) {
-      throw new Error("Campos obrigatórios não preenchidos");
+    if (!titulo) {
+      throw new Error("Título é obrigatório");
     }
 
     const findAd = await Ad.findById(id);
