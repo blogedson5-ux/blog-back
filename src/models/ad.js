@@ -4,7 +4,6 @@ const AdSchema = new mongoose.Schema(
   {
     titulo: { type: String, required: true },
     link: { type: String, required: true },
-
     images: [
       {
         url: { type: String, required: true },
