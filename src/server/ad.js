@@ -16,8 +16,8 @@ export const createAd = async (data, files) => {
 
   const { titulo, link } = data;
 
-  if (!titulo || !link) {
-    throw new Error("Campos obrigatórios não preenchidos");
+  if (!titulo) {
+    throw new Error("Título é obrigatório");
   }
 
   const uploadSingleImage = (file) =>
@@ -119,7 +119,9 @@ export const updateAd = async (id, data, files) => {
 
     if (hasNewFiles) {
       if (files.length > 3) {
-        throw new Error("Só é permitido enviar no máximo 3 imagens por anúncio");
+        throw new Error(
+          "Só é permitido enviar no máximo 3 imagens por anúncio",
+        );
       }
 
       for (const image of findAd.images || []) {
