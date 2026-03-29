@@ -9,6 +9,7 @@ import routerUser from "./controllers/user.js";
 import routerProduct from "./controllers/post.js";
 import routerAd from "./controllers/ad.js";
 import routerEmbed from "./controllers/embed.js";
+import routerAnalytics from "./controllers/analytics.js";
 
 import { databaseConnection } from "./utils/database.js";
 
@@ -35,6 +36,8 @@ app.use("/post", routerProduct);
 app.use("/ads", routerAd);
 
 app.use("/embed", routerEmbed);
+
+app.use("/analytics", routerAnalytics);
 
 // Rota raiz
 app.get("/", (_, res) => res.send("API OK"));
