@@ -1,4 +1,3 @@
-// index.js
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -10,12 +9,16 @@ import routerProduct from "./controllers/post.js";
 import routerAd from "./controllers/ad.js";
 import routerEmbed from "./controllers/embed.js";
 import routerAnalytics from "./controllers/analytics.js";
+import routerMonthlyAnalytics from "./controllers/monthlyAnalytics.js";
 
 import { databaseConnection } from "./utils/database.js";
+import {
+  startMonthlyAnalyticsJob,
+  runMonthlyAnalyticsStartupCheck,
+} from "./server/monthlyAnalytics.js";
 
 const app = express();
 
-// 🔐 CORS (antes de tudo)
 app.use(
   cors({
     origin: ["http://localhost:3000", "https://blogedson.netlify.app"],
@@ -24,35 +27,32 @@ app.use(
   }),
 );
 
-// 🔁 Preflight
 app.options("*", cors());
 
-// 🔐 JSON apenas para auth
 app.use("/auth", express.json(), routerUser);
+app.use("/analytics", express.json(), routerAnalytics);
+app.use("/monthly-analytics", express.json(), routerMonthlyAnalytics);
 
-// Rotas principais
 app.use("/post", routerProduct);
-
 app.use("/ads", routerAd);
-
 app.use("/embed", routerEmbed);
 
-app.use("/analytics", routerAnalytics);
-
-// Rota raiz
 app.get("/", (_, res) => res.send("API OK"));
 
-// 🔹 Conectar ao MongoDB antes de iniciar o servidor
 const startServer = async () => {
   try {
-    await databaseConnection(); // Conecta ao MongoDB
+    await databaseConnection();
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
+
+    app.listen(PORT, async () => {
       console.log(`🚀 API rodando em http://localhost:${PORT}`);
+
+      startMonthlyAnalyticsJob();
+      await runMonthlyAnalyticsStartupCheck();
     });
   } catch (err) {
     console.error("❌ Não foi possível iniciar o servidor:", err);
-    process.exit(1); // encerra o processo se não conectar
+    process.exit(1);
   }
 };
 

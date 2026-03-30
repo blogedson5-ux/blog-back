@@ -10,8 +10,10 @@ import {
 const router = express.Router();
 
 router.post("/track-visit", async (req, res) => {
+  console.log(req.body);
+
   try {
-    const { page } = req.body;
+    const { page } = req.body || {};
 
     if (!page) {
       return res.status(400).json({
